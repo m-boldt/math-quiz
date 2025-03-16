@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 300px;
+            margin: 20px auto;
+        }
+        button {
+            font-size: 1.2em;
+            margin: 5px;
+            padding: 10px;
+            width: 50px;
+            height: 50px;
+        }
+        #question {
+            font-size: 32px;
+        }
+        #feedback {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+        #gameOver {
+            display: none;
+            font-size: 2em;
+            color: red;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #timerContainer {
+            width: 100%;
+            height: 20px;
+            background-color: lightgray;
+            margin-top: 10px;
+            display: none;
+        }
+        #timerBar {
+            height: 100%;
+            background-color: blue;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Math Quiz</h1>
+    <label>
+        <input type="checkbox" id="modeToggle" onchange="toggleMode()"> Easy Mode
+    </label>
+    <label>
+        Timer: 
+        <select id="timerSelect" onchange="setTimerSetting()">
+            <option value="0">No Timer</option>
+            <option value="10">10 Seconds</option>
+            <option value="5">5 Seconds</option>
+            <option value="3">3 Seconds</option>
+        </select>
+    </label>
+    <p id="question"></p>
+    <div id="timerContainer"><div id="timerBar"></div></div>
+    <div class="button-container" id="buttons"></div>
+    <p id="feedback"></p>
+    <p id="gameOver">Game Over! Refresh to play again.</p>
+
+    <script>
+        let correctAnswer;
+        let isEasyMode = false;
+        let wrongStreak = 0;
+        let timerSetting = 0;
+        let timerInterval;
+
+        function toggleMode() {
+            isEasyMode = document.getElementById("modeToggle").checked;
+            wrongStreak = 0;
+            generateQuestion();
+        }
+
+        function setTimerSetting() {
+            timerSetting = parseInt(document.getElementById("timerSelect").value);
+            generateQuestion();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            if (timerSetting === 0 || isEasyMode) {
+                document.getElementById("timerContainer").style.display = "none";
+                return;
+            }
+            
+            document.getElementById("timerContainer").style.display = "block";
+            let timeLeft = timerSetting;
+            let bar = document.getElementById("timerBar");
+            bar.style.width = "100%";
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                bar.style.width = (timeLeft / timerSetting) * 100 + "%";
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    checkAnswer(-1); // Treat timeout as a wrong answer
+                }
+            }, 1000);
+        }
+
+        function generateQuestion() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            let num1 = isEasyMode ? Math.floor(Math.random() * 6) : Math.floor(Math.random() * 11);
+            let num2 = isEasyMode ? Math.floor(Math.random() * 6) : Math.floor(Math.random() * 11);
+            let isAddition = Math.random() < 0.5;
+            
+            if (!isAddition && num1 < num2) {
+                [num1, num2] = [num2, num1];
+            }
+            
+            correctAnswer = isAddition ? num1 + num2 : num1 - num2;
+            document.getElementById("question").textContent = `${num1} ${isAddition ? "+" : "-"} ${num2} = ?`;
+            document.getElementById("feedback").textContent = "";
+            startTimer();
+        }
+
+        function checkAnswer(value) {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            if (value === correctAnswer) {
+                document.getElementById("feedback").textContent = "Correct! Here's a new question.";
+                document.getElementById("feedback").className = "correct";
+                wrongStreak = 0;
+                setTimeout(generateQuestion, 1000);
+            } else {
+                document.getElementById("feedback").textContent = "Try again!";
+                document.getElementById("feedback").className = "incorrect";
+                wrongStreak++;
+                if (wrongStreak >= 3 && !isEasyMode) {
+                    document.getElementById("gameOver").style.display = "block";
+                    document.getElementById("buttons").innerHTML = "";
+                }
+            }
+        }
+
+        function createButtons() {
+            const buttonContainer = document.getElementById("buttons");
+            for (let i = 0; i <= 20; i++) {
+                let btn = document.createElement("button");
+                btn.textContent = i;
+                btn.onclick = () => checkAnswer(i);
+                buttonContainer.appendChild(btn);
+            }
+        }
+
+        createButtons();
+        generateQuestion();
+    </script>
+</body>
+</html>
